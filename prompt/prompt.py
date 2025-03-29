@@ -1,0 +1,1 @@
+DEFAULT_WRONG_TOPIC_MESSAGE = "I can only anser questions about Paul Allen"
