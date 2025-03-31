@@ -31,10 +31,13 @@ OPENAI_API_KEY2=sk-proj-******
 PINECONE_API_KEY=pcsk_******
 ```
 
-  
+4. **Set Up the Pinecode database**
+Create an index called 'paul-allen' by running  
+`python .\scraper\database.py `  
+Use the [Scraper](https://ai-test-hf2tjv3u6qqjxak7bemgen.streamlit.app/) to create and upload the chuncks to the index called 'paul-allen'
   
 
-4.  **Run the Chatbot**
+5.  **Run the Chatbot**
 
 Start the application using Chainlit:
 
