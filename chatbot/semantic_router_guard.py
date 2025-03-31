@@ -4,7 +4,7 @@ from semantic_router import Route, SemanticRouter
 from semantic_router.encoders import OpenAIEncoder
 
 
-# we could use this as a guide for our chatbot to avoid political conversations
+# our wanted topic
 politics = Route(
     name="Paul Allen",
     utterances=[
@@ -21,11 +21,10 @@ politics = Route(
 chitchat = Route(
     name="chitchat",
     utterances=[
-        "how's the weather today?",
-        "how are things going?",
-        "lovely weather today",
-        "the weather is horrendous",
-        "let's go to the chippy",
+        "thank you",
+        "what was my last question",
+        "hello",
+        "have a good day",
     ],
 )
 
