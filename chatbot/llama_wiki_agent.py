@@ -2,6 +2,7 @@ import asyncio
 from typing import Any, List
 from llama_index.tools.wikipedia import WikipediaToolSpec
 from llama_index.core.llms.function_calling import FunctionCallingLLM
+
 # from openai import OpenAI
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.tools.types import BaseTool
@@ -16,12 +17,22 @@ from llama_index.core.llms import ChatMessage
 from llama_index.core.tools import ToolSelection, ToolOutput, FunctionTool
 from llama_index.core.workflow import Event, Context
 from llama_index.llms.openai import OpenAI
+
+from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
+from llama_index.embeddings.openai import OpenAIEmbedding
 import os
+from llama_index.core.query_engine import RetrieverQueryEngine
+
 from dotenv import load_dotenv
+from langchain.chains import create_retrieval_chain
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain import hub
+
 
 load_dotenv()
 
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY2")
+
 
 class InputEvent(Event):
     input: list[ChatMessage]
@@ -37,6 +48,8 @@ class ToolCallEvent(Event):
 
 class FunctionOutputEvent(Event):
     output: ToolOutput
+
+
 # from llama_index.agent.openai import OpenAIAgent
 
 # tool_spec = WikipediaToolSpec()
@@ -44,6 +57,7 @@ class FunctionOutputEvent(Event):
 # agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
 
 # agent.chat("Who is Ben Afflecks spouse?")
+
 
 def add(x: int, y: int) -> int:
     """Useful function to add two numbers."""
@@ -54,12 +68,14 @@ def multiply(x: int, y: int) -> int:
     """Useful function to multiply two numbers."""
     return x * y
 
+
 finance_tools = WikipediaToolSpec().to_tool_list()
 # finance_tools.extend([multiply, add])
 tools = [
     FunctionTool.from_defaults(add),
     FunctionTool.from_defaults(multiply),
 ]
+
 
 class FuncationCallingAgent(Workflow):
     def __init__(
@@ -76,9 +92,7 @@ class FuncationCallingAgent(Workflow):
         assert self.llm.metadata.is_function_calling_model
 
     @step
-    async def prepare_chat_history(
-        self, ctx: Context, ev: StartEvent
-    ) -> InputEvent:
+    async def prepare_chat_history(self, ctx: Context, ev: StartEvent) -> InputEvent:
         # clear sources
         await ctx.set("sources", [])
 
@@ -125,16 +139,12 @@ class FuncationCallingAgent(Workflow):
 
         if not tool_calls:
             sources = await ctx.get("sources", default=[])
-            return StopEvent(
-                result={"response": response, "sources": [*sources]}
-            )
+            return StopEvent(result={"response": response, "sources": [*sources]})
         else:
             return ToolCallEvent(tool_calls=tool_calls)
 
     @step
-    async def handle_tool_calls(
-        self, ctx: Context, ev: ToolCallEvent
-    ) -> InputEvent:
+    async def handle_tool_calls(self, ctx: Context, ev: ToolCallEvent) -> InputEvent:
         tool_calls = ev.tool_calls
         tools_by_name = {tool.metadata.get_name(): tool for tool in self.tools}
 
@@ -188,28 +198,28 @@ class FuncationCallingAgent(Workflow):
         chat_history = memory.get()
         return InputEvent(input=chat_history)
 
+
+llm = OpenAI(model="gpt-4o")
 workflow = FuncationCallingAgent(
     # name="Agent",
     # description="Useful for performing financial operations.",
-    llm=OpenAI(model="gpt-4o"),
+    llm=llm,
     tools=finance_tools,
-    timeout=120, 
-    verbose=True
+    timeout=120,
+    verbose=True,
     # system_prompt="You are a helpful assistant.",
 )
 ctx = Context(workflow)
 
 
-
 async def main():
-    response = await workflow.run(
-        input="Hello?"
-    )
+    response = await workflow.run(input="Hello?")
     print(response)
     print(response["response"].message.blocks[0].text)
     print("aaaaaa")
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     # print(tools)
     # print()
     # print(finance_tools)

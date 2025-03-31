@@ -1,16 +1,22 @@
 import chainlit as cl
 from llama_wiki_agent import StreamEvent, workflow, ctx
-from prompt.prompt import DEFAULT_WRONG_TOPIC_MESSAGE
+import sys
+import os
+
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from scraper.database import retrieve_answers_for_prompt
+from prompt.prompt import DEFAULT_WRONG_TOPIC_MESSAGE, AGENT_PROMPT
 from semantic_router_guard import rl
 
 
 @cl.step(type="tool")
 async def tool(message: str) -> str:
-
-    handler = workflow.run(
-        input=message,
-        ctx=ctx
+    answers = retrieve_answers_for_prompt(
+        index_name="paul-allen", namespace="info", query=message, result_num=2
     )
+    prompt = AGENT_PROMPT.format(context=answers, question=message)
+    handler = workflow.run(input=prompt, ctx=ctx)
 
     msg = cl.Message(content="")  # Initialize Chainlit message
 
@@ -18,9 +24,8 @@ async def tool(message: str) -> str:
         if isinstance(event, StreamEvent):
             chunk = event.delta
             print(chunk, end="", flush=True)  # Print in terminal
-            
-            await msg.stream_token(chunk)  # Stream partial response to UI
 
+            await msg.stream_token(chunk)  # Stream partial response to UI
 
 
 @cl.on_message  # this function will be called every time a user inputs a message in the UI
@@ -39,8 +44,6 @@ async def main(message: cl.Message) -> None:
 
         # Call the tool
         await tool(message.content)
-    
+
     else:
         await cl.Message(content=DEFAULT_WRONG_TOPIC_MESSAGE).send()
-
-   

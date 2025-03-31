@@ -6,6 +6,7 @@ from typing import Dict, List
 from bs4 import BeautifulSoup
 import requests
 
+
 def run_scraper(soup: BeautifulSoup, url: str) -> List[Dict]:
     pass
 
@@ -47,5 +48,5 @@ def main(urls: List[str], output_dir: Path) -> None:
             logger.error(f'Failed to save data to "{save_path}" - {e}')
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     main(["https://en.wikipedia.org/wiki/Paul_Allen"], Path("scraper/data"))
